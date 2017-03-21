@@ -4,6 +4,7 @@ package de.sebastianroming.android.popmovies;
  * Copyright (c) 2017 Sebastian Roming
  */
 
+import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -36,6 +37,17 @@ public class Movie implements Parcelable {
         this.rating     = movie.getInt("vote_average");
         this.date       = movie.getString("release_date");
 
+    }
+
+    /** ---------------------------------------------------------------------------------- **/
+    public Movie(Cursor cursor) {
+        this.id         = cursor.getInt(Config.MOVIE_COLUMN_ID);
+        this.title      = cursor.getString(Config.MOVIE_COLUMN_TITLE);
+        this.image      = cursor.getString(Config.MOVIE_COLUMN_IMAGE);
+        this.detailImage= cursor.getString(Config.MOVIE_COLUMN_DETAILIMAGE);
+        this.overview   = cursor.getString(Config.MOVIE_COLUMN_OVERVIEW);
+        this.rating     = cursor.getInt(Config.MOVIE_COLUMN_RATING);
+        this.date       = cursor.getString(Config.MOVIE_COLUMN_DATE);
     }
 
     /** ---------------------------------------------------------------------------------- **/

@@ -8,7 +8,6 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,21 +16,19 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class MovieGridListAdapter extends BaseAdapter {
+public class TrailerAdapter extends BaseAdapter {
 
     private final Context mContext;
     private final LayoutInflater mInflater;
+    private final Trailer mLock = new Trailer();
 
-    private final Movie mLock = new Movie();
-
-    private List<Movie> mObjects;
-
+    private List<Trailer> mObjects;
 
     /** ---------------------------------------------------------------------------------- **/
-    public MovieGridListAdapter(Context context, List<Movie> movies) {
-        mContext = context;
-        mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mObjects = movies;
+    public TrailerAdapter(Context context, List<Trailer> objects) {
+        mContext    = context;
+        mInflater   = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mObjects    = objects;
     }
 
     /** ---------------------------------------------------------------------------------- **/
@@ -40,7 +37,7 @@ public class MovieGridListAdapter extends BaseAdapter {
     }
 
     /** ---------------------------------------------------------------------------------- **/
-    public void add(Movie object) {
+    public void add(Trailer object) {
         synchronized (mLock) {
             mObjects.add(object);
         }
@@ -63,7 +60,7 @@ public class MovieGridListAdapter extends BaseAdapter {
 
     /** ---------------------------------------------------------------------------------- **/
     @Override
-    public Movie getItem(int position) {
+    public Trailer getItem(int position) {
         return mObjects.get(position);
     }
 
@@ -74,33 +71,25 @@ public class MovieGridListAdapter extends BaseAdapter {
     }
 
     /** ---------------------------------------------------------------------------------- **/
-    public void setData(List<Movie> data) {
-        clear();
-        for (Movie movie : data) {
-            add(movie);
-        }
-    }
-
-    /** ---------------------------------------------------------------------------------- **/
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = convertView;
         ViewHolder viewHolder;
 
         if (view == null) {
-            view = LayoutInflater.from(getContext()).inflate(R.layout.list_item_movie, parent, false);
+            view = mInflater.inflate(R.layout.item_movie_trailer, parent, false);
             viewHolder = new ViewHolder(view);
             view.setTag(viewHolder);
         }
 
-        final Movie movie = getItem(position);
-        String sImageUrl = Config.TMBD_IMAGE_BASE_URL + Config.TMBD_IMAGE_GRID_SIZE + movie.getImage();
+        final Trailer trailer = getItem(position);
 
         viewHolder = (ViewHolder) view.getTag();
 
-        Picasso.with(getContext()).load(sImageUrl).into(viewHolder.vhImageView);
+        String youtubeThumbnailUrl = "http://img.youtube.com/vi/" + trailer.getKey() + "/0.jpg";
+        Picasso.with(getContext()).load(youtubeThumbnailUrl).into(viewHolder.imageView);
 
-        viewHolder.vhTitleView.setText(movie.getTitle());
+        viewHolder.nameView.setText(trailer.getName());
 
         return view;
     }
@@ -108,14 +97,14 @@ public class MovieGridListAdapter extends BaseAdapter {
     /** ---------------------------------------------------------------------------------- **/
     public static class ViewHolder {
 
-        public final ImageView vhImageView;
-        public final TextView vhTitleView;
+        public final ImageView imageView;
+        public final TextView nameView;
 
+        /** ---------------------------------------------------------------------------------- **/
         public ViewHolder(View view) {
-            vhImageView = (ImageView) view.findViewById(R.id.grid_item_image);
-            vhTitleView = (TextView) view.findViewById(R.id.grid_item_title);
+            imageView   = (ImageView) view.findViewById(R.id.trailer_image);
+            nameView    = (TextView) view.findViewById(R.id.trailer_name);
         }
-
     }
 
 }
