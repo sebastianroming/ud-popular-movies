@@ -5,33 +5,28 @@ package de.sebastianroming.android.popmovies;
  */
 
 import android.content.Context;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-public class MovieGridListAdapter extends BaseAdapter {
+public class ReviewAdapter extends BaseAdapter {
 
     private final Context mContext;
     private final LayoutInflater mInflater;
+    private final Review mLock = new Review();
 
-    private final Movie mLock = new Movie();
-
-    private List<Movie> mObjects;
-
+    private List<Review> mObjects;
 
     /** ---------------------------------------------------------------------------------- **/
-    public MovieGridListAdapter(Context context, List<Movie> movies) {
-        mContext = context;
-        mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mObjects = movies;
+    public ReviewAdapter(Context context, List<Review> objects) {
+        mContext    = context;
+        mInflater   = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mObjects    = objects;
     }
 
     /** ---------------------------------------------------------------------------------- **/
@@ -40,7 +35,7 @@ public class MovieGridListAdapter extends BaseAdapter {
     }
 
     /** ---------------------------------------------------------------------------------- **/
-    public void add(Movie object) {
+    public void add(Review object) {
         synchronized (mLock) {
             mObjects.add(object);
         }
@@ -63,7 +58,7 @@ public class MovieGridListAdapter extends BaseAdapter {
 
     /** ---------------------------------------------------------------------------------- **/
     @Override
-    public Movie getItem(int position) {
+    public Review getItem(int position) {
         return mObjects.get(position);
     }
 
@@ -74,33 +69,23 @@ public class MovieGridListAdapter extends BaseAdapter {
     }
 
     /** ---------------------------------------------------------------------------------- **/
-    public void setData(List<Movie> data) {
-        clear();
-        for (Movie movie : data) {
-            add(movie);
-        }
-    }
-
-    /** ---------------------------------------------------------------------------------- **/
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = convertView;
         ViewHolder viewHolder;
 
         if (view == null) {
-            view = LayoutInflater.from(getContext()).inflate(R.layout.list_item_movie, parent, false);
+            view = mInflater.inflate(R.layout.item_movie_review, parent, false);
             viewHolder = new ViewHolder(view);
             view.setTag(viewHolder);
         }
 
-        final Movie movie = getItem(position);
-        String sImageUrl = Config.TMBD_IMAGE_BASE_URL + Config.TMBD_IMAGE_GRID_SIZE + movie.getImage();
+        final Review review = getItem(position);
 
         viewHolder = (ViewHolder) view.getTag();
 
-        Picasso.with(getContext()).load(sImageUrl).into(viewHolder.vhImageView);
-
-        viewHolder.vhTitleView.setText(movie.getTitle());
+        viewHolder.authorView.setText(review.getAuthor());
+        viewHolder.contentView.setText(Html.fromHtml(review.getContent()));
 
         return view;
     }
@@ -108,14 +93,14 @@ public class MovieGridListAdapter extends BaseAdapter {
     /** ---------------------------------------------------------------------------------- **/
     public static class ViewHolder {
 
-        public final ImageView vhImageView;
-        public final TextView vhTitleView;
+        public final TextView authorView;
+        public final TextView contentView;
 
+        /** ---------------------------------------------------------------------------------- **/
         public ViewHolder(View view) {
-            vhImageView = (ImageView) view.findViewById(R.id.grid_item_image);
-            vhTitleView = (TextView) view.findViewById(R.id.grid_item_title);
+            authorView  = (TextView) view.findViewById(R.id.review_author);
+            contentView = (TextView) view.findViewById(R.id.review_content);
         }
-
     }
 
 }

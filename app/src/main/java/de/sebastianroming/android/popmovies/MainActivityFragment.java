@@ -4,7 +4,9 @@ package de.sebastianroming.android.popmovies;
  * Copyright (c) 2017 Sebastian Roming
  */
 
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -49,6 +51,11 @@ public class MainActivityFragment extends Fragment {
     }
 
     /** ---------------------------------------------------------------------------------- **/
+    public interface Callback {
+        void onItemSelected(Movie movie);
+    }
+
+    /** ---------------------------------------------------------------------------------- **/
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,17 +65,26 @@ public class MainActivityFragment extends Fragment {
     /** ---------------------------------------------------------------------------------- **/
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
         inflater.inflate(R.menu.menu_fragment, menu);
-        MenuItem action_sort_by_popularity = menu.findItem(R.id.action_sort_by_popularity);
-        MenuItem action_sort_by_rating = menu.findItem(R.id.action_sort_by_rating);
+
+        MenuItem action_sort_by_popularity  = menu.findItem(R.id.action_sort_by_popularity);
+        MenuItem action_sort_by_rating      = menu.findItem(R.id.action_sort_by_rating);
+        MenuItem action_sort_by_favorite    = menu.findItem(R.id.action_sort_by_favorite);
+
         if (mSortBy.contentEquals(Config.TMBD_API_SORT_POPULARITY)) {
             if (!action_sort_by_popularity.isChecked())
                 action_sort_by_popularity.setChecked(true);
         }
-        else {
+        else if (mSortBy.contentEquals(Config.TMBD_API_SORT_RATING)) {
             if (!action_sort_by_rating.isChecked())
                 action_sort_by_rating.setChecked(true);
         }
+        else if (mSortBy.contentEquals(Config.TMBD_API_SORT_FAVORITE)) {
+            if (!action_sort_by_favorite.isChecked())
+                action_sort_by_favorite.setChecked(true);
+        }
+
     }
 
     /** ---------------------------------------------------------------------------------- **/
@@ -92,6 +108,14 @@ public class MainActivityFragment extends Fragment {
                 mSortBy = Config.TMBD_API_SORT_RATING;
                 updateMovies(mSortBy);
                 return true;
+            case R.id.action_sort_by_favorite:
+                if (item.isChecked())
+                    item.setChecked(false);
+                else
+                    item.setChecked(true);
+                mSortBy = Config.TMBD_API_SORT_FAVORITE;
+                updateMovies(mSortBy);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -106,7 +130,7 @@ public class MainActivityFragment extends Fragment {
 
         mGridView = (GridView) view.findViewById(R.id.gridview_movies);
 
-        movieGridListAdapter = new MovieGridListAdapter(getActivity());
+        movieGridListAdapter = new MovieGridListAdapter(getActivity(), new ArrayList<Movie>());
         mGridView.setAdapter(movieGridListAdapter);
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
@@ -142,8 +166,11 @@ public class MainActivityFragment extends Fragment {
 
     /** ---------------------------------------------------------------------------------- **/
     private void updateMovies(String sort_by) {
-        FetchMoviesTask moviesTask = new FetchMoviesTask();
-        moviesTask.execute(sort_by);
+        if (!sort_by.contentEquals(Config.TMBD_API_SORT_FAVORITE)) {
+            new FetchMoviesTask().execute(sort_by);
+        } else {
+            new FetchFavoriteMoviesTask(getActivity()).execute();
+        }
     }
 
     /** ---------------------------------------------------------------------------------- **/
@@ -196,12 +223,14 @@ public class MainActivityFragment extends Fragment {
                 try {
 
                     final String BASE_URL       = Config.TMBD_API_BASE_URL + params[0] + "?";
+                    final String SORT_BY_PARAM  = "sort_by";
                     final String API_KEY_PARAM  = "api_key";
                     final String API_KEY        = getResources().getString(R.string.api_key);
 
                     Uri builtUri = Uri.parse(BASE_URL).buildUpon()
-                        .appendQueryParameter(API_KEY_PARAM, API_KEY)
-                        .build();
+                            .appendQueryParameter(SORT_BY_PARAM, params[0])
+                            .appendQueryParameter(API_KEY_PARAM, API_KEY)
+                            .build();
 
                 URL url = new URL(builtUri.toString());
 
@@ -260,6 +289,51 @@ public class MainActivityFragment extends Fragment {
                     for (Movie movie : movies) {
                         movieGridListAdapter.add(movie);
                     }
+                }
+                mMovies = new ArrayList<>();
+                mMovies.addAll(movies);
+            }
+        }
+    }
+
+    /** ---------------------------------------------------------------------------------- **/
+    public class FetchFavoriteMoviesTask extends AsyncTask<Void, Void, List<Movie>> {
+
+        private Context mContext;
+
+        public FetchFavoriteMoviesTask(Context context) {
+            mContext = context;
+        }
+
+        private List<Movie> getFavoriteMoviesDataFromCursor(Cursor cursor) {
+            List<Movie> results = new ArrayList<>();
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    Movie movie = new Movie(cursor);
+                    results.add(movie);
+                } while (cursor.moveToNext());
+                cursor.close();
+            }
+            return results;
+        }
+
+        @Override
+        protected List<Movie> doInBackground(Void... params) {
+            Cursor cursor = mContext.getContentResolver().query(
+                    MovieContract.MovieEntry.CONTENT_URI,
+                    Config.MOVIE_COLUMNS,
+                    null,
+                    null,
+                    null
+            );
+            return getFavoriteMoviesDataFromCursor(cursor);
+        }
+
+        @Override
+        protected void onPostExecute(List<Movie> movies) {
+            if (movies != null) {
+                if (movieGridListAdapter != null) {
+                    movieGridListAdapter.setData(movies);
                 }
                 mMovies = new ArrayList<>();
                 mMovies.addAll(movies);

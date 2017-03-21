@@ -26,6 +26,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.sebastianroming.android.popmovies.MainActivity" />
         </activity>
+        <provider
+            android:authorities="@string/content_authority"
+            android:name=".MovieProvider"
+            android:exported="false" />
     </application>
 
 </manifest>
